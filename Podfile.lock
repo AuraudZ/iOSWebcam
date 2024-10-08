@@ -1,0 +1,16 @@
+PODS:
+  - BlueSocket (2.0.4)
+
+DEPENDENCIES:
+  - BlueSocket
+
+SPEC REPOS:
+  trunk:
+    - BlueSocket
+
+SPEC CHECKSUMS:
+  BlueSocket: cc33e2bded4b680ff14200b4160ed459602b9205
+
+PODFILE CHECKSUM: b962c5948680b01e11bff9d8db3d10793c264a97
+
+COCOAPODS: 1.11.2
