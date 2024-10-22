@@ -11,6 +11,8 @@ import AVFoundation
 import Accelerate
 import Socket
 
+var socketIp = "192.168.1.123";
+
 public func CVPixelBufferGetPixelFormatName(pixelBuffer: CVPixelBuffer) -> String {
     let p = CVPixelBufferGetPixelFormatType(pixelBuffer)
     switch p {
@@ -190,7 +192,7 @@ class ViewController: UIViewController {
         super.viewDidAppear(animated)
         checkPermissions()
         do {
-        try client?.connect(to:"172.20.10.6", port: 3333);
+        try client?.connect(to:socketIp, port: 3333);
         }
         catch {
             print("failed to connect to client")
@@ -302,15 +304,18 @@ class ViewController: UIViewController {
             captureSession.removeInput(backInput)
             captureSession.addInput(frontInput)
             backCameraOn = false
+//            videoOutput.connections.first?.videoOrientation = .portrait
+    
         } else {
             captureSession.removeInput(frontInput)
             captureSession.addInput(backInput)
+//            videoOutput.connections.first?.videoOrientation = .landscapeLeft
             backCameraOn = true
         }
         
         //deal with the connection again for portrait mode
         videoOutput.connections.first?.videoOrientation = .portrait
-        
+
         //mirror the video stream for front camera
         videoOutput.connections.first?.isVideoMirrored = !backCameraOn
         
@@ -342,19 +347,23 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
  
         
-        if !takePicture {
-            return //we have nothing to do with the image buffer
-        }
+//        if !takePicture {
+//            return //we have nothing to do with the image buffer
+//        }
         
-        
-        do {
-            if client == nil {
-                client = try Socket.create()
-            }
-            try client?.connect(to:"172.20.10.6", port: 3333);
-        }
-        catch {
-        }
+//    
+//        do {
+//           
+//            let isActive = client?.isActive;
+//            let boolValue: Bool? = isActive
+//            if boolValue ?? false {
+//                print("client is active")
+//            }
+//            try client?.connect(to:socketIp, port: 3333);
+//        }
+//        catch {
+//            print("error: \(error)")
+//        }
         
         //try and get a CVImageBuffer out of the sample buffer
         guard let cvBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
@@ -364,14 +373,9 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
     
         
         //get a CIImage out of the CVImageBuffer
-        let ciImage = CIImage(cvImageBuffer: cvBuffer)
+        //let ciImage = CIImage(cvImageBuffer: cvBuffer)
         let type = CVPixelBufferGetPixelFormatType( cvBuffer);
         let typeName = CVPixelBufferGetPixelFormatName(pixelBuffer: cvBuffer)
-        print("type: \(typeName)")
-        if (type != kCVPixelFormatType_DepthFloat32) {
-            NSLog("Wrong type");
-        }
-    
         var data:NSData;
         
         
@@ -382,24 +386,22 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
             print("error converting to ARGB")
         }
         
-        print("height \(inBuff.height) width \(inBuff.width), rowBytes \(inBuff.rowBytes)")
         let length =  Int(inBuff.rowBytes) * Int(inBuff.height);
-        data = NSData(bytes: inBuff.data, length: length)
-     
+        data = NSData(bytesNoCopy: inBuff.data, length:length)
         do {
             try client?.write(from: data)
         }
         catch  {
-            
-            print("error writing to client")
+           // print("error writing to client")
         }
         
         CVPixelBufferUnlockBaseAddress(cvBuffer, CVPixelBufferLockFlags(rawValue: 0))
+        
         //get UIImage out of CIImage
-        let uiImage = UIImage(ciImage: ciImage)
+      //  let uiImage = UIImage(ciImage: ciImage)
         
         DispatchQueue.main.async {
-            self.capturedImageView.image = uiImage
+          //  self.capturedImageView.image = uiImage
             self.takePicture = false
         }
     }
